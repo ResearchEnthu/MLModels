@@ -144,3 +144,8 @@ best_score = -grid_search.best_score_
 
 print("Best Parameters:", best_params)
 print("Best Score (MSE):", best_score)
+
+import pickle
+
+with open("classifier.pkl", "wb") as model_file:
+    pickle.dump(lr, model_file)
