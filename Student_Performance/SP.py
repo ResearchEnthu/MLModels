@@ -18,134 +18,58 @@ data.describe()
 print("\nNull values in each column:",data.isnull().sum())
 print("shape of data:",data.shape)  
 print("describe the data set",data.describe())
+print("shape of data:",data.shape)
 
-columns = [
-    "Hours Studied",
-    "Previous Scores",
-    "Sleep Hours",
-    "Sample Question Papers Practiced",
-    "Performance Index"
-]
+data['Extracurricular Activities'].replace(['Yes','No'],[True,False],inplace=True)
+print("Extracurricular activities", data['Extracurricular Activities'])
 
-# Loop through each column to plot its distribution
-# for col in columns:
-#     plt.figure(figsize=(8, 4))  # Set the figure size
-#     sns.histplot(data[col], kde=True, bins=30, color="skyblue")  # Histogram with KDE curve
-#     plt.title(f'Distribution of {col}')  # Set the plot title
-#     plt.xlabel(col)  # Set x-axis label
-#     plt.ylabel('Frequency')  # Set y-axis label
-#     plt.grid(True)  # Add grid for better readability
-#     plt.show()  # Show the plot
-# clr = data.corr(numeric_only=True)
-# sns.heatmap(clr, annot=True, cmap='Greens')
-# plt.title("Correlation between Features")
-# plt.show()
+import plotly.express as px
+fig=px.imshow(data.corr(),
+             text_auto=True,
+             color_continuous_scale='RdBu')
+fig.show()
 
-# sns.pairplot(data)
-# plt.show()
+from sklearn import linear_model as lm
+from sklearn.model_selection import train_test_split as tts
+model=lm.LinearRegression()
 
-data.drop(columns=['Extracurricular Activities','Sample Question Papers Practiced', 'Sleep Hours'], inplace=True)
-data.head()
+y=data['Performance Index']
+X=data.drop('Performance Index',axis=1)
 
-# X = data.drop(columns=["Performance Index"]).values
-# y = data["Performance Index"].values.reshape(-1, 1)
+X_train,X_test,y_train,y_test=tts(X,y,test_size=0.15,random_state=42)
 
-cols = list(data.columns)
-cols
-x = data[cols[0:-1]]
-y = data[cols[-1]]
+print(X_train.shape,X_test.shape,y_train.shape,y_test.shape)
+model.fit(X_train, y_train)
+y_pred=model.predict(X_test)
+print("Predictkion:", y_pred)
 
+from sklearn.metrics import mean_squared_error,r2_score
 
+print("MSE:", mean_squared_error(y_test, y_pred))
+print("R² score:", r2_score(y_test, y_pred))
 
-# X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=4)
+import plotly.express as px
+import pandas as pd
 
-# from sklearn.linear_model import LinearRegression
-# Model = LinearRegression()
-# Model.fit(X_train,y_train)
-# prediction = Model.predict(X_test)
-# print("Prediction value:", prediction)
+plot_df = pd.DataFrame({
+    'Actual': y_test,
+    'Predicted': y_pred
+})
 
-
-# from sklearn.metrics import r2_score
-# r2_score(y_test, prediction)
-# score = r2_score
-# print("r2_score calculation:", score)
-x_train, x_test, y_train, y_test = train_test_split(x, y, train_size = 0.7, random_state = 23)
-from sklearn import metrics
-from sklearn.model_selection import cross_val_score
-
-def cross_val(model):
-    predict = cross_val_score(model, x, y, cv=10)
-    return predict.mean()
-
-def model_metrics(true, predicted):
-    mae = metrics.mean_absolute_error(true, predicted)
-    mse = metrics.mean_squared_error(true, predicted)
-    rmse = np.sqrt(metrics.mean_squared_error(true, predicted))
-    r2_square = metrics.r2_score(true, predicted)
-    return mae, mse, rmse, r2_square
-
-def print_model_metrics(true, predicted):  
-    mae = metrics.mean_absolute_error(true, predicted)
-    mse = metrics.mean_squared_error(true, predicted)
-    rmse = np.sqrt(metrics.mean_squared_error(true, predicted))
-    r2_square = metrics.r2_score(true, predicted)
-    print('Mean Absolute Error:', mae)
-    print('Mean Squared Error:', mse)
-    print('Root Mean Squared Error:', rmse)
-    print('R2 Square', r2_square)
-
-from sklearn.preprocessing import StandardScaler
-
-ss = StandardScaler()
-
-x_train = ss.fit_transform(x_train)
-x_test = ss.fit_transform(x_test)
-from sklearn.linear_model import LinearRegression
-
-lr = LinearRegression()
-lr.fit(x_train, y_train)
-
-coeffs = pd.DataFrame(data=[lr.coef_], columns=[x.columns])
-coeffs.insert(0, "Model", "Linear Regression")
-print("Coefficient value:", coeffs)
-
-pred = lr.predict(x_test)
-print("Prediction value:",pred)
-pd.DataFrame({'True' : y_test,
-             'Predicted' : pred}).plot.scatter(x='True', y='Predicted')
-pd.DataFrame({'Error values': (y_test - pred)}).plot.kde()
-
-test_pred = lr.predict(x_test)
-train_pred = lr.predict(x_train)
-
-print('Test set evaluation:')
-print_model_metrics(y_test, test_pred)
-print('\n')
-print('Train set evaluation:')
-print_model_metrics(y_train, train_pred)
-
-score = lr.score(x_test, y_test)
-print("R² score:", score)
+scatter_plot = px.scatter(
+    plot_df,  
+    x='Actual',  
+    y=plot_df.index, 
+    title="Actual vs Predicted",
+    labels={"Actual": "Actual Values", "index": "Index"}, 
+)
 
 
-param_grid = {
-    'n_estimators' : [100,200,300],
-    'max_depth' : [None,5,10]
-}
-
-rfr = RandomForestRegressor(random_state = 23)
-
-grid_search = GridSearchCV(rfr,param_grid, cv=5, scoring='neg_mean_squared_error')
-grid_search.fit(x_train,y_train)
-
-best_params = grid_search.best_params_
-best_score = -grid_search.best_score_
-
-print("Best Parameters:", best_params)
-print("Best Score (MSE):", best_score)
-
-import pickle
-
-with open("classifier.pkl", "wb") as model_file:
-    pickle.dump(lr, model_file)
+scatter_plot.add_scatter(
+    x=plot_df['Predicted'], 
+    y=plot_df.index,  
+    mode='markers',  
+    hovertemplate="Predicted: %{x}<br>Index: %{y}",  
+    marker=dict(opacity=0.5),  
+    name="Predicted" 
+)
