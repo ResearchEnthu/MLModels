@@ -84,7 +84,7 @@ if uploaded_file is not None:
         marker=dict(opacity=0.5),
         name="Predicted"
     )
-
+# ploty added
     st.plotly_chart(scatter_plot)
 
 else:
