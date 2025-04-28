@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import OneHotEncoder
+import pickle
 
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, LabelEncoder
@@ -163,3 +164,7 @@ evaluate_model("Decision Tree", models["Decision Tree"], X_test_encoded, y_test)
 
 # Evaluate Random Forest
 evaluate_model("Random Forest", models["Random Forest"], X_test_encoded, y_test)
+
+
+with open("classifier.pkl", "wb") as model_file:
+    pickle.dump(model, model_file)
